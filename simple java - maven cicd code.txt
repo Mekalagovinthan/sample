@@ -1,0 +1,36 @@
+simple java - maven cicd code
+
+pipeline {
+    
+    agent any
+    
+    tools {
+        maven 'Maven 3'
+        
+    }
+    stages{
+        stage('checkout'){
+            steps {
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'gittoken', url: 'https://github.com/Mekalagovinthan/java-project.git']])
+            }
+        }
+        stage ('Build'){
+            steps {
+                sh 'mvn clean install -f pom.xml'
+            }
+            
+        }
+        stage ('code quality'){
+            steps {
+                withSonarQubeEnv('sonarqubeserver') {
+                     sh 'mvn sonar:sonar -f pom.xml'
+                }
+            }
+        }
+        stage ('dev deploy'){
+            steps {
+                deploy adapters: [tomcat9(credentialsId: 'TomcatUsernamepassword', path: '', url: 'http://192.168.100.20:9090/')], contextPath: null, war: '**/*.war'
+            }
+        }
+    }
+}
